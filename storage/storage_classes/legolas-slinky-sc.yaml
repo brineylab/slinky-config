@@ -1,0 +1,18 @@
+# legolas-slinky-sc.yaml
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-legolas-jh
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 172.29.180.191 # legolas scripps ip
+  share: /srv/nfs/slinky
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions:
+  - hard
+  - proto=tcp
+  - nfsvers=4.1

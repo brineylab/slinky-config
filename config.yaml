@@ -1,0 +1,68 @@
+## slinky config file
+
+controller:
+  statefulset:
+    persistence:
+      storageClassName: nfs-legolas-jh
+  podSpec:
+    nodeSelector:
+      kubernetes.io/hostname: legolas
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+
+# Compute nodes
+nodesets:
+  slinky:
+    replicas: 3
+    slurmd:
+      image:
+        repository: ghcr.io/slinkyproject/slurmd-pyxis  # pyxis-enabled image
+    podSpec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - slurmd
+              topologyKey: kubernetes.io/hostname
+      volumes:
+        - name: davyjones-shared
+          nfs:
+            server: davyjones.scripps.edu
+            path: /davyjones_data_zfspool/brineylab_shared
+      containers:
+        - name: slurmd
+          volumeMounts:
+            - name: davyjones-shared
+              mountPath: /home/jovyan/shared
+
+# Pyxis: configure plugstack.conf
+configFiles:
+  plugstack.conf: |
+    include /usr/share/pyxis/*
+
+# Login node: use pyxis image and enable privileged mode
+loginsets:
+  slinky:
+    enabled: true
+    login:
+      image:
+        repository: ghcr.io/slinkyproject/login-pyxis
+      securityContext:
+        privileged: true
+    podSpec:
+      volumes:
+        - name: davyjones-shared
+          nfs:
+            server: davyjones.scripps.edu
+            path: /davyjones_data_zfspool/brineylab_shared
+      containers:
+        - name: slurmd
+          volumeMounts:
+            - name: davyjones-shared
+              mountPath: /home/jovyan/shared
