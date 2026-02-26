@@ -6,13 +6,7 @@ controller:
       storageClassName: nfs-legolas-jh
   podSpec:
     nodeSelector:
-      kubernetes.io/hostname: legolas
-    tolerations:
-      - key: node-role.kubernetes.io/control-plane
-        operator: Exists
-        effect: NoSchedule
-
-# Compute nodes
+      node-type: controller
 nodesets:
   slinky:
     replicas: 3
