@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: slurm-wrappers
+  namespace: slurm
+data:
+  srun: |
+    #!/usr/bin/env bash
+    EXTRA=""
+
+    # Collect only the Slurm flags (everything before the command)
+    SLURM_ARGS=""
+    for arg in "$@"; do
+      [[ "$arg" == -* ]] && SLURM_ARGS="$SLURM_ARGS $arg" || break
+    done
+
+    # Default container image
+    if [[ "$SLURM_ARGS" != *"--container-image"* ]]; then
+      EXTRA="$EXTRA --container-image=quay.io/jupyter/datascience-notebook --container-name=datascience"
+    fi
+
+    # Default CPUs per task (only for cpu partition)
+    if [[ "$SLURM_ARGS" != *"--partition=gpu"* ]] && [[ "$SLURM_ARGS" != *"-p gpu"* ]] && \
+       [[ "$SLURM_ARGS" != *"--cpus-per-task"* ]] && [[ "$SLURM_ARGS" != *"-c"* ]]; then
+      EXTRA="$EXTRA --cpus-per-task=16"
+    fi
+
+    # Default shared volume mount
+    if [[ "$SLURM_ARGS" != *"--container-mounts"* ]]; then
+      EXTRA="$EXTRA --container-mounts=/home/jovyan/shared:/home/jovyan/shared"
+    fi
+
+    exec /usr/bin/srun $EXTRA "$@"
+
+  sbatch: |
+    #!/usr/bin/env bash
+    EXTRA=""
+    SCRIPT="${@: -1}"
+
+    # Collect only the Slurm flags (everything before the script)
+    SLURM_ARGS=""
+    for arg in "$@"; do
+      [[ "$arg" == -* ]] && SLURM_ARGS="$SLURM_ARGS $arg" || break
+    done
+
+    # Default container image (check CLI args and script)
+    if [[ "$SLURM_ARGS" != *"--container-image"* ]] && ! grep -q "container-image" "$SCRIPT" 2>/dev/null; then
+      EXTRA="$EXTRA --container-image=quay.io/jupyter/datascience-notebook --container-name=datascience"
+    fi
+
+    # Default CPUs per task (only for cpu partition)
+    if [[ "$SLURM_ARGS" != *"--partition=gpu"* ]] && [[ "$SLURM_ARGS" != *"-p gpu"* ]] && \
+       [[ "$SLURM_ARGS" != *"--cpus-per-task"* ]] && [[ "$SLURM_ARGS" != *"-c"* ]] && \
+       ! grep -q "cpus-per-task" "$SCRIPT" 2>/dev/null; then
+      EXTRA="$EXTRA --cpus-per-task=16"
+    fi
+
+    # Default shared volume mount (check CLI args and script)
+    if [[ "$SLURM_ARGS" != *"--container-mounts"* ]] && ! grep -q "container-mounts" "$SCRIPT" 2>/dev/null; then
+      EXTRA="$EXTRA --container-mounts=/home/jovyan/shared:/home/jovyan/shared"
+    fi
+
+    exec /usr/bin/sbatch $EXTRA "$@"
