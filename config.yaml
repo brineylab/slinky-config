@@ -1,5 +1,4 @@
 ## slinky config file
-
 controller:
   statefulset:
     persistence:
@@ -7,56 +6,172 @@ controller:
   podSpec:
     nodeSelector:
       node-type: controller
-nodesets:
-  slinky:
-    replicas: 3
-    slurmd:
-      image:
-        repository: ghcr.io/slinkyproject/slurmd-pyxis  # pyxis-enabled image
-    podSpec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                      - slurmd
-              topologyKey: kubernetes.io/hostname
-      volumes:
-        - name: davyjones-shared
-          nfs:
-            server: davyjones.scripps.edu
-            path: /davyjones_data_zfspool/brineylab_shared
-      containers:
-        - name: slurmd
-          volumeMounts:
-            - name: davyjones-shared
-              mountPath: /home/jovyan/shared
-
-# Pyxis: configure plugstack.conf
+  extraConfMap:
+    GresTypes: gpu
 configFiles:
+  # pyxis: configure plugstack.conf
+  # ref: https://slinky.schedmd.com/projects/slurm-operator/en/release-1.0/usage/pyxis.html
   plugstack.conf: |
     include /usr/share/pyxis/*
-
-# Login node: use pyxis image and enable privileged mode
+  gres.conf: |
+    AutoDetect=nvidia
+# login node config
 loginsets:
   slinky:
     enabled: true
     login:
       image:
-        repository: ghcr.io/slinkyproject/login-pyxis
+        repository: ghcr.io/slinkyproject/login-pyxis  # pyxis-enabled image
       securityContext:
         privileged: true
+      volumeMounts:
+        - name: davyjones-shared
+          mountPath: /home/jovyan/shared
+        - name: slurm-wrappers
+          mountPath: /usr/local/bin/srun
+          subPath: srun
+        - name: slurm-wrappers
+          mountPath: /usr/local/bin/sbatch
+          subPath: sbatch
     podSpec:
       volumes:
         - name: davyjones-shared
           nfs:
             server: davyjones.scripps.edu
             path: /davyjones_data_zfspool/brineylab_shared
-      containers:
-        - name: slurmd
-          volumeMounts:
-            - name: davyjones-shared
-              mountPath: /home/jovyan/shared
+        - name: slurm-wrappers
+          configMap:
+            name: slurm-wrappers
+            defaultMode: 0755
+# compute node config
+nodesets:
+  # disable default
+  slinky:
+    enabled: false
+
+  # CPU nodes
+  cpu:
+    enabled: true
+    replicas: 3
+    updateStrategy:
+      type: RollingUpdate
+    slurmd:
+      image:
+        repository: ghcr.io/slinkyproject/slurmd-pyxis
+        tag: 25.11-ubuntu24.04
+      volumeMounts:
+        - name: davyjones-shared
+          mountPath: /home/jovyan/shared
+    logfile:
+      image:
+        repository: docker.io/library/alpine
+        tag: latest
+    podSpec:
+      nodeSelector:
+        node-type: cpu
+      volumes:
+        - name: davyjones-shared
+          nfs:
+            server: davyjones.scripps.edu
+            path: /davyjones_data_zfspool/brineylab_shared
+
+  # GPU nodes - A6000 (loki)
+  gpu-a6000:
+    enabled: true
+    replicas: 1
+    updateStrategy:
+      type: RollingUpdate
+    slurmd:
+      image:
+        repository: ghcr.io/slinkyproject/slurmd-pyxis
+        tag: 25.11-ubuntu24.04
+      volumeMounts:
+        - name: davyjones-shared
+          mountPath: /home/jovyan/shared
+      resources:
+        limits:
+          nvidia.com/gpu: 2
+    extraConfMap:
+      Gres: ["gpu:a6000:2"]
+    logfile:
+      image:
+        repository: docker.io/library/alpine
+        tag: latest
+    podSpec:
+      nodeSelector:
+        node-type: gpu
+      volumes:
+        - name: davyjones-shared
+          nfs:
+            server: davyjones.scripps.edu
+            path: /davyjones_data_zfspool/brineylab_shared
+
+  # GPU nodes - Blackwell (lusca)
+  gpu-lusca:
+    enabled: true
+    replicas: 1
+    updateStrategy:
+      type: RollingUpdate
+    slurmd:
+      image:
+        repository: ghcr.io/slinkyproject/slurmd-pyxis
+        tag: 25.11-ubuntu24.04
+      volumeMounts:
+        - name: davyjones-shared
+          mountPath: /home/jovyan/shared
+        - name: af3-databases
+          mountPath: /mnt/af3_data
+      resources:
+        limits:
+          nvidia.com/gpu: 10
+    extraConfMap:
+      Gres: ["gpu:blackwell:10"]
+    logfile:
+      image:
+        repository: docker.io/library/alpine
+        tag: latest
+    podSpec:
+      nodeSelector:
+        node-type: gpu-lusca
+      volumes:
+        - name: davyjones-shared
+          nfs:
+            server: davyjones.scripps.edu
+            path: /davyjones_data_zfspool/brineylab_shared
+        - name: af3-databases
+          hostPath:
+            path: /mnt/af3_data
+            type: Directory
+
+partitions:
+  # disable default
+  all:
+    enabled: false
+
+  # setup default memory to scales with the num CPUs
+  # default num CPUs is defined in the slurm wrappers configmap
+  cpu:
+    enabled: true
+    nodesets:
+      - cpu
+    configMap:
+      Default: "YES"
+      DefMemPerCPU: 2048
+
+  # define cpu / memory based on num GPUs
+  gpu:
+    enabled: true
+    nodesets:
+      - gpu-a6000
+    configMap:
+      DefCpuPerGPU: 8
+      DefMemPerGPU: 32768
+
+  # Blackwell GPUs (lusca) - AF3 workloads
+  gpu-lusca:
+    enabled: true
+    nodesets:
+      - gpu-lusca
+    configMap:
+      DefCpuPerGPU: 6
+      DefMemPerGPU: 38400
