@@ -1,0 +1,103 @@
+# freeipa-deployment.yaml
+# ref: https://github.com/iPenguin/bare-metal-kubernetes/blob/master/roles/freeipa/templates/freeipa-statefulset.yaml.j2
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: freeipa
+  namespace: freeipa
+spec:
+  selector:
+    matchLabels:
+      app: freeipa
+  serviceName: freeipa
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: freeipa
+    spec:
+      # Set hostname to the short name and subdomain to resolve FQDN
+      # legolas.scripps.edu requires a matching headless service named "scripps"
+      # OR use hostAliases + explicit hostname below
+      hostname: legolas
+      subdomain: scripps
+      hostAliases:
+        - ip: "172.29.180.191"
+          hostnames:
+            - "legolas.scripps.edu"
+            - "legolas"
+      nodeSelector:
+        freeipa: "true"
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name: freeipa
+          image: freeipa/freeipa-server:almalinux-9
+          args:
+            - ipa-server-install
+            - --unattended
+            - --realm=MIDDLEEARTH.LOCAL
+            - --domain=middleearth.local
+            - --ds-password=YourDMPassword123!
+            - --admin-password=YourAdminPassword123!
+            - --no-ntp
+            - --no-sshd
+            - --setup-dns
+            - --no-forwarders
+            - --allow-zone-overlap
+            - --hostname=legolas.scripps.edu  # explicitly tell IPA the FQDN
+          env:
+            - name: IPA_SERVER_HOSTNAME
+              value: legolas.scripps.edu
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          ports:
+            - containerPort: 80
+              name: http
+            - containerPort: 443
+              name: https
+            - containerPort: 389
+              name: ldap
+            - containerPort: 636
+              name: ldaps
+            - containerPort: 88
+              name: kerberos-tcp
+              protocol: TCP
+            - containerPort: 88
+              name: kerberos-udp
+              protocol: UDP
+            - containerPort: 464
+              name: kpasswd-tcp
+              protocol: TCP
+            - containerPort: 464
+              name: kpasswd-udp
+              protocol: UDP
+          volumeMounts:
+            - name: freeipa-data
+              mountPath: /data
+            - name: cgroups
+              mountPath: /sys/fs/cgroup
+              readOnly: false
+            - name: shm
+              mountPath: /dev/shm
+          readinessProbe:
+            tcpSocket:
+              port: 443
+            initialDelaySeconds: 600
+            periodSeconds: 30
+            failureThreshold: 10
+
+      volumes:
+        - name: freeipa-data
+          persistentVolumeClaim:
+            claimName: freeipa-data
+        - name: cgroups
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi

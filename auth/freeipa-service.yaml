@@ -1,0 +1,47 @@
+# freeipa-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: freeipa
+  namespace: freeipa
+spec:
+  selector:
+    app: freeipa
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+    - name: https
+      port: 443
+      targetPort: 443
+      nodePort: 30443
+    - name: ldap
+      port: 389
+      targetPort: 389
+      nodePort: 30389
+    - name: ldaps
+      port: 636
+      targetPort: 636
+      nodePort: 30636
+    - name: kerberos-tcp
+      port: 88
+      targetPort: 88
+      nodePort: 30088
+      protocol: TCP
+    - name: kerberos-udp
+      port: 88
+      targetPort: 88
+      nodePort: 30088
+      protocol: UDP
+    - name: kpasswd-tcp
+      port: 464
+      targetPort: 464
+      nodePort: 30464
+      protocol: TCP
+    - name: kpasswd-udp
+      port: 464
+      targetPort: 464
+      nodePort: 30464
+      protocol: UDP
