@@ -77,7 +77,7 @@ nodesets:
 
   # GPU nodes - A6000 (loki)
   gpu-a6000:
-    enabled: true
+    enabled: false
     replicas: 1
     updateStrategy:
       type: RollingUpdate
@@ -159,8 +159,8 @@ partitions:
       DefMemPerCPU: 2048
 
   # define cpu / memory based on num GPUs
-  gpu:
-    enabled: true
+  gpu-a6000:
+    enabled: false
     nodesets:
       - gpu-a6000
     configMap:
