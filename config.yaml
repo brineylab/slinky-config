@@ -15,6 +15,7 @@ configFiles:
     include /usr/share/pyxis/*
   gres.conf: |
     AutoDetect=nvidia
+
 # login node config
 loginsets:
   slinky:
@@ -24,9 +25,23 @@ loginsets:
         repository: ghcr.io/slinkyproject/login-pyxis  # pyxis-enabled image
       securityContext:
         privileged: true
+      # create user home dirs on first login
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - /bin/bash
+              - -lc
+              - |
+                set -e
+                if ! grep -q "pam_mkhomedir.so" /etc/pam.d/sshd; then
+                  echo "session required pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/sshd
+                fi
       volumeMounts:
+        - name: slurm-homes
+          mountPath: /home
         - name: davyjones-shared
-          mountPath: /home/jovyan/shared
+          mountPath: /data/shared
         - name: slurm-wrappers
           mountPath: /usr/local/bin/srun
           subPath: srun
@@ -35,6 +50,9 @@ loginsets:
           subPath: sbatch
     podSpec:
       volumes:
+        - name: slurm-homes
+          persistentVolumeClaim:
+            claimName: slurm-homes
         - name: davyjones-shared
           nfs:
             server: davyjones.scripps.edu
@@ -43,6 +61,7 @@ loginsets:
           configMap:
             name: slurm-wrappers
             defaultMode: 0755
+
 # compute node config
 nodesets:
   # disable default
@@ -60,8 +79,10 @@ nodesets:
         repository: ghcr.io/slinkyproject/slurmd-pyxis
         tag: 25.11-ubuntu24.04
       volumeMounts:
+        - name: slurm-homes
+          mountPath: /home
         - name: davyjones-shared
-          mountPath: /home/jovyan/shared
+          mountPath: /data/shared
     logfile:
       image:
         repository: docker.io/library/alpine
@@ -70,6 +91,9 @@ nodesets:
       nodeSelector:
         node-type: cpu
       volumes:
+        - name: slurm-homes
+          persistentVolumeClaim:
+            claimName: slurm-homes
         - name: davyjones-shared
           nfs:
             server: davyjones.scripps.edu
@@ -86,8 +110,10 @@ nodesets:
         repository: ghcr.io/slinkyproject/slurmd-pyxis
         tag: 25.11-ubuntu24.04
       volumeMounts:
+        - name: slurm-homes
+          mountPath: /home
         - name: davyjones-shared
-          mountPath: /home/jovyan/shared
+          mountPath: /data/shared
       resources:
         limits:
           nvidia.com/gpu: 2
@@ -101,6 +127,9 @@ nodesets:
       nodeSelector:
         node-type: gpu
       volumes:
+        - name: slurm-homes
+          persistentVolumeClaim:
+            claimName: slurm-homes
         - name: davyjones-shared
           nfs:
             server: davyjones.scripps.edu
@@ -117,8 +146,10 @@ nodesets:
         repository: ghcr.io/slinkyproject/slurmd-pyxis
         tag: 25.11-ubuntu24.04
       volumeMounts:
+        - name: slurm-homes
+          mountPath: /home
         - name: davyjones-shared
-          mountPath: /home/jovyan/shared
+          mountPath: /data/shared
         - name: af3-databases
           mountPath: /mnt/af3_data
       resources:
@@ -134,6 +165,9 @@ nodesets:
       nodeSelector:
         node-type: gpu-lusca
       volumes:
+        - name: slurm-homes
+          persistentVolumeClaim:
+            claimName: slurm-homes
         - name: davyjones-shared
           nfs:
             server: davyjones.scripps.edu
