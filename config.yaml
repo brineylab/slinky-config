@@ -38,6 +38,10 @@ loginsets:
                   echo "session required pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/sshd
                 fi
       volumeMounts:
+        - name: lldap-ca
+          mountPath: /etc/ssl/certs/lldap-ca.crt
+          subPath: lldap-ca.crt
+          readOnly: true
         - name: slurm-homes
           mountPath: /home
         - name: davyjones-shared
@@ -50,6 +54,9 @@ loginsets:
           subPath: sbatch
     podSpec:
       volumes:
+        - name: lldap-ca
+          configMap:
+            name: lldap-ca
         - name: slurm-homes
           persistentVolumeClaim:
             claimName: slurm-homes
