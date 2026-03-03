@@ -10,7 +10,7 @@ provisioner: nfs.csi.k8s.io
 parameters:
   server: 172.29.180.191 # legolas scripps ip
   share: /srv/nfs/slinky
-reclaimPolicy: Delete
+reclaimPolicy: Retain
 volumeBindingMode: Immediate
 mountOptions:
   - hard
