@@ -1,4 +1,33 @@
 ## slinky config file
+
+# shared volumeMounts
+x-vm-slurm-homes: &vm_slurm_homes
+  name: slurm-homes
+  mountPath: /home
+x-vm-davyjones-shared: &vm_davyjones_shared
+  name: davyjones-shared
+  mountPath: /data/shared
+x-vm-af3-databases: &vm_af3_databases
+  name: af3-databases
+  mountPath: /mnt/af3_data
+
+# shared volumes
+x-vol-slurm-homes: &vol_slurm_homes
+  name: slurm-homes
+  persistentVolumeClaim:
+    claimName: slurm-homes
+x-vol-davyjones-shared: &vol_davyjones_shared
+  name: davyjones-shared
+  nfs:
+    server: davyjones.scripps.edu
+    path: /davyjones_data_zfspool/brineylab_shared
+x-vol-af3-databases: &vol_af3_databases
+  name: af3-databases
+  hostPath:
+    path: /mnt/af3_data
+    type: Directory
+
+# controller
 controller:
   statefulset:
     persistence:
@@ -51,32 +80,25 @@ loginsets:
           mountPath: /etc/ssl/certs/lldap-ca.crt
           subPath: lldap-ca.crt
           readOnly: true
-        - name: slurm-homes
-          mountPath: /home
-        - name: davyjones-shared
-          mountPath: /data/shared
         - name: slurm-wrappers
           mountPath: /usr/local/bin/srun
           subPath: srun
         - name: slurm-wrappers
           mountPath: /usr/local/bin/sbatch
           subPath: sbatch
+        - *vm_slurm_homes
+        - *vm_davyjones_shared
     podSpec:
       volumes:
         - name: lldap-ca
           configMap:
             name: lldap-ca
-        - name: slurm-homes
-          persistentVolumeClaim:
-            claimName: slurm-homes
-        - name: davyjones-shared
-          nfs:
-            server: davyjones.scripps.edu
-            path: /davyjones_data_zfspool/brineylab_shared
         - name: slurm-wrappers
           configMap:
             name: slurm-wrappers
             defaultMode: 0755
+        - *vol_slurm_homes
+        - *vol_davyjones_shared
 
 # compute node config
 nodesets:
@@ -95,10 +117,8 @@ nodesets:
         repository: ghcr.io/slinkyproject/slurmd-pyxis
         tag: 25.11-ubuntu24.04
       volumeMounts:
-        - name: slurm-homes
-          mountPath: /home
-        - name: davyjones-shared
-          mountPath: /data/shared
+        - *vm_slurm_homes
+        - *vm_davyjones_shared
     logfile:
       image:
         repository: docker.io/library/alpine
@@ -107,13 +127,8 @@ nodesets:
       nodeSelector:
         node-type: cpu
       volumes:
-        - name: slurm-homes
-          persistentVolumeClaim:
-            claimName: slurm-homes
-        - name: davyjones-shared
-          nfs:
-            server: davyjones.scripps.edu
-            path: /davyjones_data_zfspool/brineylab_shared
+        - *vol_slurm_homes
+        - *vol_davyjones_shared
 
   # GPU nodes - A6000 (loki)
   gpu-a6000:
@@ -126,10 +141,8 @@ nodesets:
         repository: ghcr.io/slinkyproject/slurmd-pyxis
         tag: 25.11-ubuntu24.04
       volumeMounts:
-        - name: slurm-homes
-          mountPath: /home
-        - name: davyjones-shared
-          mountPath: /data/shared
+        - *vm_slurm_homes
+        - *vm_davyjones_shared
       resources:
         limits:
           nvidia.com/gpu: 2
@@ -143,13 +156,8 @@ nodesets:
       nodeSelector:
         node-type: gpu
       volumes:
-        - name: slurm-homes
-          persistentVolumeClaim:
-            claimName: slurm-homes
-        - name: davyjones-shared
-          nfs:
-            server: davyjones.scripps.edu
-            path: /davyjones_data_zfspool/brineylab_shared
+        - *vol_slurm_homes
+        - *vol_davyjones_shared
 
   # GPU nodes - Blackwell (lusca)
   gpu-lusca:
@@ -162,12 +170,9 @@ nodesets:
         repository: ghcr.io/slinkyproject/slurmd-pyxis
         tag: 25.11-ubuntu24.04
       volumeMounts:
-        - name: slurm-homes
-          mountPath: /home
-        - name: davyjones-shared
-          mountPath: /data/shared
-        - name: af3-databases
-          mountPath: /mnt/af3_data
+        - *vm_slurm_homes
+        - *vm_davyjones_shared
+        - *vm_af3_databases
       resources:
         limits:
           nvidia.com/gpu: 10
@@ -181,17 +186,9 @@ nodesets:
       nodeSelector:
         node-type: gpu-lusca
       volumes:
-        - name: slurm-homes
-          persistentVolumeClaim:
-            claimName: slurm-homes
-        - name: davyjones-shared
-          nfs:
-            server: davyjones.scripps.edu
-            path: /davyjones_data_zfspool/brineylab_shared
-        - name: af3-databases
-          hostPath:
-            path: /mnt/af3_data
-            type: Directory
+        - *vol_slurm_homes
+        - *vol_davyjones_shared
+        - *vol_af3_databases
 
 partitions:
   # disable default
