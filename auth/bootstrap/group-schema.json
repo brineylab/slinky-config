@@ -1,0 +1,9 @@
+[
+  {
+    "name": "gidnumber",
+    "attributeType": "Integer",
+    "isEditable": true,
+    "isList": false,
+    "isVisible": true
+  }
+]

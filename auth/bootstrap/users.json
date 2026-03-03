@@ -1,0 +1,13 @@
+[
+  {"id": "sssd", "email": "sssd@cluster.local", "gidnumber": 1000, "uidnumber": 1000, "groups": ["lldap_strict_readonly"]},
+  {"id": "sburbach", "email": "sburbach@cluster.local", "gidnumber": 1000, "uidnumber": 1001, "groups": ["lldap_admin", "lldap_password_manager"]},
+  {"id": "tmessmer", "email": "tmessmer@cluster.local", "gidnumber": 1000, "uidnumber": 1002, "groups": ["lldap_admin", "lldap_password_manager"]},
+  {"id": "briney", "email": "briney@cluster.local", "gidnumber": 1000, "uidnumber": 1003, "groups": ["lldap_admin", "lldap_password_manager"]},
+  {"id": "kang", "email": "kang@cluster.local", "gidnumber": 1000, "uidnumber": 1004},
+  {"id": "sferrier", "email": "sferrier@cluster.local", "gidnumber": 1000, "uidnumber": 1005},
+  {"id": "pgangavarapu", "email": "pgangavarapu@cluster.local", "gidnumber": 1000, "uidnumber": 1006},
+  {"id": "jhurtado", "email": "jhurtado@cluster.local", "gidnumber": 1000, "uidnumber": 1007},
+  {"id": "bnemoz", "email": "bnemoz@cluster.local", "gidnumber": 1000, "uidnumber": 1008},
+  {"id": "scallaghan", "email": "scallaghan@cluster.local", "gidnumber": 1000, "uidnumber": 1009},
+  {"id": "nmishra", "email": "nmishra@cluster.local", "gidnumber": 1000, "uidnumber": 1010}
+]

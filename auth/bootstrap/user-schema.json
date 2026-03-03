@@ -1,0 +1,23 @@
+[
+  {
+    "name": "gidnumber",
+    "attributeType": "Integer",
+    "isEditable": true,
+    "isList": false,
+    "isVisible": true
+  },
+  {
+    "name": "uidnumber",
+    "attributeType": "Integer",
+    "isEditable": true,
+    "isList": false,
+    "isVisible": true
+  },
+  {
+    "name": "sshpublickey",
+    "attributeType": "String",
+    "isEditable": true,
+    "isList": false,
+    "isVisible": true
+  }
+]
