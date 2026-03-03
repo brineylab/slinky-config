@@ -25,7 +25,6 @@ loginsets:
         repository: ghcr.io/slinkyproject/login-pyxis  # pyxis-enabled image
       securityContext:
         privileged: true
-      # create user home dirs on first login
       lifecycle:
         postStart:
           exec:
@@ -34,9 +33,19 @@ loginsets:
               - -lc
               - |
                 set -e
+
+                # create user home dirs on first login
                 if ! grep -q "pam_mkhomedir.so" /etc/pam.d/sshd; then
                   echo "session required pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/sshd
                 fi
+
+                # install pwquality & cracklib so users can change their password via passwd
+                if command -v apt-get >/dev/null 2>&1; then
+                  export DEBIAN_FRONTEND=noninteractive
+                  apt-get update
+                  apt-get install -y --no-install-recommends libpam-pwquality cracklib-runtime
+                fi
+
       volumeMounts:
         - name: lldap-ca
           mountPath: /etc/ssl/certs/lldap-ca.crt
