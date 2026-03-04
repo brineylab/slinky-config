@@ -8,9 +8,21 @@ x-vm-slurm-homes: &vm_slurm_homes
 x-vm-davyjones-shared: &vm_davyjones_shared
   name: davyjones-shared
   mountPath: /data/shared
+x-vm-wallace-references: &vm_wallace_references
+  name: wallace-references
+  mountPath: /data/references
+x-vm-avon-novaseq6k: &vm_avon_novaseq6k
+  name: avon-novaseq6k
+  mountPath: /data/sequencing_runs/novaseq
+x-vm-avon-nextseq2k: &vm_avon_nextseq2k
+  name: avon-nextseq2k
+  mountPath: /data/sequencing_runs/nextseq
+x-vm-stringer-ont: &vm_stringer_ont
+  name: stringer-ont
+  mountPath: /data/sequencing_runs/ont
 x-vm-af3-databases: &vm_af3_databases
   name: af3-databases
-  mountPath: /mnt/af3_data
+  mountPath: /data/af3_data
 
 # shared volumes
 x-vol-slurm-homes: &vol_slurm_homes
@@ -19,9 +31,24 @@ x-vol-slurm-homes: &vol_slurm_homes
     claimName: slurm-homes
 x-vol-davyjones-shared: &vol_davyjones_shared
   name: davyjones-shared
-  nfs:
-    server: davyjones.scripps.edu
-    path: /davyjones_data_zfspool/brineylab_shared
+  persistentVolumeClaim:
+    claimName: nfs-davyjones-shared
+x-vol-wallace-references: &vol_wallace_references
+  name: wallace-references
+  persistentVolumeClaim:
+    claimName: nfs-wallace-references
+x-vol-avon-novaseq6k: &vol_avon_novaseq6k
+  name: avon-novaseq6k
+  persistentVolumeClaim:
+    claimName: nfs-avon-novaseq6k
+x-vol-avon-nextseq2k: &vol_avon_nextseq2k
+  name: avon-nextseq2k
+  persistentVolumeClaim:
+    claimName: nfs-avon-nextseq2k
+x-vol-stringer-ont: &vol_stringer_ont
+  name: stringer-ont
+  persistentVolumeClaim:
+    claimName: nfs-stringer-ont
 x-vol-af3-databases: &vol_af3_databases
   name: af3-databases
   hostPath:
@@ -89,6 +116,11 @@ loginsets:
           subPath: sbatch
         - *vm_slurm_homes
         - *vm_davyjones_shared
+        - *vm_wallace_references
+        - *vm_avon_novaseq6k
+        - *vm_avon_nextseq2k
+        - *vm_stringer_ont
+        
     podSpec:
       volumes:
         - name: lldap-ca
@@ -100,6 +132,10 @@ loginsets:
             defaultMode: 0755
         - *vol_slurm_homes
         - *vol_davyjones_shared
+        - *vol_wallace_references
+        - *vol_avon_novaseq6k
+        - *vol_avon_nextseq2k
+        - *vol_stringer_ont
 
 # compute node config
 nodesets:
@@ -120,6 +156,10 @@ nodesets:
       volumeMounts:
         - *vm_slurm_homes
         - *vm_davyjones_shared
+        - *vm_wallace_references
+        - *vm_avon_novaseq6k
+        - *vm_avon_nextseq2k
+        - *vm_stringer_ont
     logfile:
       image:
         repository: docker.io/library/alpine
@@ -130,6 +170,10 @@ nodesets:
       volumes:
         - *vol_slurm_homes
         - *vol_davyjones_shared
+        - *vol_wallace_references
+        - *vol_avon_novaseq6k
+        - *vol_avon_nextseq2k
+        - *vol_stringer_ont
 
   # GPU nodes - A6000 (loki)
   gpu-a6000:
@@ -144,6 +188,10 @@ nodesets:
       volumeMounts:
         - *vm_slurm_homes
         - *vm_davyjones_shared
+        - *vm_wallace_references
+        - *vm_avon_novaseq6k
+        - *vm_avon_nextseq2k
+        - *vm_stringer_ont
       resources:
         limits:
           nvidia.com/gpu: 2
@@ -159,6 +207,11 @@ nodesets:
       volumes:
         - *vol_slurm_homes
         - *vol_davyjones_shared
+        - *vol_wallace_references
+        - *vol_avon_novaseq6k
+        - *vol_avon_nextseq2k
+        - *vol_stringer_ont
+        - *vol_af3_databases
 
   # GPU nodes - Blackwell (lusca)
   gpu-lusca:
@@ -173,6 +226,10 @@ nodesets:
       volumeMounts:
         - *vm_slurm_homes
         - *vm_davyjones_shared
+        - *vm_wallace_references
+        - *vm_avon_novaseq6k
+        - *vm_avon_nextseq2k
+        - *vm_stringer_ont
         - *vm_af3_databases
       resources:
         limits:
@@ -189,6 +246,10 @@ nodesets:
       volumes:
         - *vol_slurm_homes
         - *vol_davyjones_shared
+        - *vol_wallace_references
+        - *vol_avon_novaseq6k
+        - *vol_avon_nextseq2k
+        - *vol_stringer_ont
         - *vol_af3_databases
 
 partitions:

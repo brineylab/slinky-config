@@ -1,0 +1,44 @@
+# wallace-references.yaml
+---
+# wallace sc
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-wallace-nvme
+provisioner: nfs.csi.k8s.io
+volumeBindingMode: Immediate
+
+---
+# references pv
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-wallace-references
+spec:
+  capacity:
+    storage: 300Ti
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-wallace-nvme
+  mountOptions:
+    - hard
+  nfs:
+    server: wallace.scripps.edu
+    path: "/wallace_data_zfspool/references"
+
+---
+# references pvc
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-wallace-references
+  namespace: slurm
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: nfs-wallace-nvme
+  volumeName: nfs-wallace-references
+  resources:
+    requests:
+      storage: 300Ti
