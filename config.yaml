@@ -1,4 +1,5 @@
 ## slinky config file
+# ref: https://github.com/SlinkyProject/slurm-operator/blob/main/helm/slurm/values.yaml
 
 # shared volumeMounts
 x-vm-slurm-homes: &vm_slurm_homes
