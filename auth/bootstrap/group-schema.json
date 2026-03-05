@@ -1,7 +1,7 @@
 [
   {
-    "name": "gidnumber",
-    "attributeType": "Integer",
+    "name": "gidNumber",
+    "attributeType": "INTEGER",
     "isEditable": true,
     "isList": false,
     "isVisible": true

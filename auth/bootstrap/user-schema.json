@@ -1,14 +1,14 @@
 [
   {
-    "name": "gidnumber",
-    "attributeType": "Integer",
+    "name": "gidNumber",
+    "attributeType": "INTEGER",
     "isEditable": true,
     "isList": false,
     "isVisible": true
   },
   {
-    "name": "uidnumber",
-    "attributeType": "Integer",
+    "name": "uidNumber",
+    "attributeType": "INTEGER",
     "isEditable": true,
     "isList": false,
     "isVisible": true
