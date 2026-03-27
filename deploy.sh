@@ -14,4 +14,4 @@ rm -f "$SSSD_CONF"
 unset SSSD_PASS
 
 # reset login pod
-# microk8s kubectl delete pod -n slurm -l app.kubernetes.io/component=login
+microk8s kubectl delete pod -n slurm -l app.kubernetes.io/component=login

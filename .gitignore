@@ -8,3 +8,8 @@ secrets/
 
 # OS
 .DS_Store
+
+# Identity
+auth/certs/*
+!auth/certs/.gitkeep
+.env

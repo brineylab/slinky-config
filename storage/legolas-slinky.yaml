@@ -30,18 +30,3 @@ spec:
   resources:
     requests:
       storage: 100Gi
-
----
-# lldap pvc
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: lldap-data
-  namespace: lldap
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-  storageClassName: nfs-legolas-jh
