@@ -5,34 +5,48 @@
 x-vm-slurm-homes: &vm_slurm_homes
   name: slurm-homes
   mountPath: /home
+x-vm-davyjones-users: &vm_davyjones_users
+  name: davyjones-users
+  mountPath: /data/users
 x-vm-davyjones-shared: &vm_davyjones_shared
   name: davyjones-shared
   mountPath: /data/shared
+  readOnly: True
 x-vm-wallace-references: &vm_wallace_references
   name: wallace-references
   mountPath: /data/references
+  readOnly: True
 x-vm-avon-novaseq6k: &vm_avon_novaseq6k
   name: avon-novaseq6k
   mountPath: /data/sequencing_runs/novaseq
+  readOnly: True
 x-vm-avon-nextseq2k: &vm_avon_nextseq2k
   name: avon-nextseq2k
   mountPath: /data/sequencing_runs/nextseq
+  readOnly: True
 x-vm-stringer-ont: &vm_stringer_ont
   name: stringer-ont
   mountPath: /data/sequencing_runs/ont
-x-vm-af3-databases: &vm_af3_databases
-  name: af3-databases
-  mountPath: /data/af3_data
+  readOnly: True
+# x-vm-af3-databases: &vm_af3_databases
+#   name: af3-databases
+#   mountPath: /data/af3_data
+#   readOnly: True
 
 # shared volumes
 x-vol-slurm-homes: &vol_slurm_homes
   name: slurm-homes
   persistentVolumeClaim:
     claimName: slurm-homes
+x-vol-davyjones-users: &vol_davyjones_users
+  name: davyjones-users
+  persistentVolumeClaim:
+    claimName: nfs-davyjones-shared
 x-vol-davyjones-shared: &vol_davyjones_shared
   name: davyjones-shared
   persistentVolumeClaim:
     claimName: nfs-davyjones-shared
+    readOnly: true
 x-vol-wallace-references: &vol_wallace_references
   name: wallace-references
   persistentVolumeClaim:
@@ -49,11 +63,11 @@ x-vol-stringer-ont: &vol_stringer_ont
   name: stringer-ont
   persistentVolumeClaim:
     claimName: nfs-stringer-ont
-x-vol-af3-databases: &vol_af3_databases
-  name: af3-databases
-  hostPath:
-    path: /mnt/af3_data
-    type: Directory
+# x-vol-af3-databases: &vol_af3_databases
+#   name: af3-databases
+#   hostPath:
+#     path: /mnt/af3_data
+#     type: Directory
 
 # controller
 controller:
@@ -115,6 +129,7 @@ loginsets:
           mountPath: /usr/local/bin/sbatch
           subPath: sbatch
         - *vm_slurm_homes
+        - *vm_davyjones_users
         - *vm_davyjones_shared
         - *vm_wallace_references
         - *vm_avon_novaseq6k
@@ -131,6 +146,7 @@ loginsets:
             name: slurm-wrappers
             defaultMode: 0755
         - *vol_slurm_homes
+        - *vol_davyjones_users
         - *vol_davyjones_shared
         - *vol_wallace_references
         - *vol_avon_novaseq6k
@@ -146,7 +162,7 @@ nodesets:
   # CPU nodes
   cpu:
     enabled: true
-    replicas: 3
+    replicas: 1
     updateStrategy:
       type: RollingUpdate
     slurmd:
@@ -155,6 +171,7 @@ nodesets:
         tag: 25.11-ubuntu24.04
       volumeMounts:
         - *vm_slurm_homes
+        - *vm_davyjones_users
         - *vm_davyjones_shared
         - *vm_wallace_references
         - *vm_avon_novaseq6k
@@ -169,6 +186,7 @@ nodesets:
         node-type: cpu
       volumes:
         - *vol_slurm_homes
+        - *vol_davyjones_users
         - *vol_davyjones_shared
         - *vol_wallace_references
         - *vol_avon_novaseq6k
@@ -187,6 +205,7 @@ nodesets:
         tag: 25.11-ubuntu24.04
       volumeMounts:
         - *vm_slurm_homes
+        - *vm_davyjones_users
         - *vm_davyjones_shared
         - *vm_wallace_references
         - *vm_avon_novaseq6k
@@ -206,16 +225,17 @@ nodesets:
         node-type: gpu
       volumes:
         - *vol_slurm_homes
+        - *vol_davyjones_users
         - *vol_davyjones_shared
         - *vol_wallace_references
         - *vol_avon_novaseq6k
         - *vol_avon_nextseq2k
         - *vol_stringer_ont
-        - *vol_af3_databases
+        # - *vol_af3_databases
 
   # GPU nodes - Blackwell (lusca)
   gpu-lusca:
-    enabled: true
+    enabled: false
     replicas: 1
     updateStrategy:
       type: RollingUpdate
@@ -225,12 +245,13 @@ nodesets:
         tag: 25.11-ubuntu24.04
       volumeMounts:
         - *vm_slurm_homes
+        - *vm_davyjones_users
         - *vm_davyjones_shared
         - *vm_wallace_references
         - *vm_avon_novaseq6k
         - *vm_avon_nextseq2k
         - *vm_stringer_ont
-        - *vm_af3_databases
+        # - *vm_af3_databases
       resources:
         limits:
           nvidia.com/gpu: 10
@@ -245,12 +266,13 @@ nodesets:
         node-type: gpu-lusca
       volumes:
         - *vol_slurm_homes
+        - *vol_davyjones_users
         - *vol_davyjones_shared
         - *vol_wallace_references
         - *vol_avon_novaseq6k
         - *vol_avon_nextseq2k
         - *vol_stringer_ont
-        - *vol_af3_databases
+        # - *vol_af3_databases
 
 partitions:
   # disable default
@@ -278,7 +300,7 @@ partitions:
 
   # Blackwell GPUs (lusca) - AF3 workloads
   gpu-lusca:
-    enabled: true
+    enabled: false
     nodesets:
       - gpu-lusca
     configMap:

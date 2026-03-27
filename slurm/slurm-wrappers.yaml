@@ -7,28 +7,33 @@ data:
   srun: |
     #!/usr/bin/env bash
     EXTRA=""
-
-    # Collect only the Slurm flags (everything before the command)
-    SLURM_ARGS=""
-    for arg in "$@"; do
-      [[ "$arg" == -* ]] && SLURM_ARGS="$SLURM_ARGS $arg" || break
-    done
+    SLURM_ARGS="$*"
 
     # Default container image
     if [[ "$SLURM_ARGS" != *"--container-image"* ]]; then
-      EXTRA="$EXTRA --container-image=quay.io/jupyter/datascience-notebook --container-name=datascience"
+      EXTRA="$EXTRA --container-image=brineylab/datascience --container-name=briney-datascience"
     fi
 
-    # Default CPUs per task (only for cpu partition)
+    # Default CPUs per task (cpu partition only)
     if [[ "$SLURM_ARGS" != *"--partition=gpu"* ]] && [[ "$SLURM_ARGS" != *"-p gpu"* ]] && \
-       [[ "$SLURM_ARGS" != *"--cpus-per-task"* ]] && [[ "$SLURM_ARGS" != *"-c"* ]]; then
+       [[ "$SLURM_ARGS" != *"--cpus-per-task"* ]] && [[ "$SLURM_ARGS" != *"-c "* ]]; then
       EXTRA="$EXTRA --cpus-per-task=16"
     fi
 
-    # Default shared volume mount
-    if [[ "$SLURM_ARGS" != *"--container-mounts"* ]]; then
-      EXTRA="$EXTRA --container-mounts=/home/jovyan/shared:/home/jovyan/shared"
+    # Always enforce required mounts, warn if user tried to set them
+    if [[ "$SLURM_ARGS" == *"--container-mounts"* ]]; then
+      echo "[srun wrapper] Warning: --container-mounts is managed by the cluster and cannot be overridden."
+      set -- $(echo "$@" | sed 's/--container-mounts=[^ ]*//g')
     fi
+
+    MOUNTS=/data/users/$(whoami):/home/jovyan/work,\
+    /data/shared:/home/jovyan/shared:ro,\
+    /data/references:/home/jovyan/references:ro,\
+    /data/sequencing_runs/novaseq:/home/jovyan/sequencing_runs/novaseq:ro,\
+    /data/sequencing_runs/nextseq:/home/jovyan/sequencing_runs/nextseq:ro,\
+    /data/sequencing_runs/ont:/home/jovyan/sequencing_runs/ont:ro
+
+    EXTRA="$EXTRA --container-mounts=$MOUNTS"
 
     exec /usr/bin/srun $EXTRA "$@"
 
@@ -36,28 +41,33 @@ data:
     #!/usr/bin/env bash
     EXTRA=""
     SCRIPT="${@: -1}"
+    SLURM_ARGS="$*"
 
-    # Collect only the Slurm flags (everything before the script)
-    SLURM_ARGS=""
-    for arg in "$@"; do
-      [[ "$arg" == -* ]] && SLURM_ARGS="$SLURM_ARGS $arg" || break
-    done
-
-    # Default container image (check CLI args and script)
+    # Default container image (check CLI args and script #SBATCH directives)
     if [[ "$SLURM_ARGS" != *"--container-image"* ]] && ! grep -q "container-image" "$SCRIPT" 2>/dev/null; then
-      EXTRA="$EXTRA --container-image=quay.io/jupyter/datascience-notebook --container-name=datascience"
+      EXTRA="$EXTRA --container-image=brineylab/datascience --container-name=briney-datascience"
     fi
 
-    # Default CPUs per task (only for cpu partition)
+    # Default CPUs per task (cpu partition only)
     if [[ "$SLURM_ARGS" != *"--partition=gpu"* ]] && [[ "$SLURM_ARGS" != *"-p gpu"* ]] && \
-       [[ "$SLURM_ARGS" != *"--cpus-per-task"* ]] && [[ "$SLURM_ARGS" != *"-c"* ]] && \
+       [[ "$SLURM_ARGS" != *"--cpus-per-task"* ]] && [[ "$SLURM_ARGS" != *"-c "* ]] && \
        ! grep -q "cpus-per-task" "$SCRIPT" 2>/dev/null; then
       EXTRA="$EXTRA --cpus-per-task=16"
     fi
 
-    # Default shared volume mount (check CLI args and script)
-    if [[ "$SLURM_ARGS" != *"--container-mounts"* ]] && ! grep -q "container-mounts" "$SCRIPT" 2>/dev/null; then
-      EXTRA="$EXTRA --container-mounts=/home/jovyan/shared:/home/jovyan/shared"
+    # Always enforce required mounts, warn if user tried to set them
+    if [[ "$SLURM_ARGS" == *"--container-mounts"* ]] || grep -q "container-mounts" "$SCRIPT" 2>/dev/null; then
+      echo "[sbatch wrapper] Warning: --container-mounts is managed by the cluster and cannot be overridden."
+      set -- $(echo "$@" | sed 's/--container-mounts=[^ ]*//g')
     fi
+
+    MOUNTS=/data/users/$(whoami):/home/jovyan/work,\
+    /data/shared:/home/jovyan/shared:ro,\
+    /data/references:/home/jovyan/references:ro,\
+    /data/sequencing_runs/novaseq:/home/jovyan/sequencing_runs/novaseq:ro,\
+    /data/sequencing_runs/nextseq:/home/jovyan/sequencing_runs/nextseq:ro,\
+    /data/sequencing_runs/ont:/home/jovyan/sequencing_runs/ont:ro
+
+    EXTRA="$EXTRA --container-mounts=$MOUNTS"
 
     exec /usr/bin/sbatch $EXTRA "$@"
