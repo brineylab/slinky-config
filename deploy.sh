@@ -8,7 +8,8 @@ microk8s helm upgrade --install slurm \
   --values=config.yaml \
   --set-file "loginsets.slinky.sssdConf=$SSSD_CONF" \
   --set-file "loginsets.slinky.rootSshAuthorizedKeys=${HOME}/.ssh/id_ed25519.pub" \
-  --namespace=slurm
+  --namespace=slurm \
+  --version 1.0.1
 
 rm -f "$SSSD_CONF"
 unset SSSD_PASS
